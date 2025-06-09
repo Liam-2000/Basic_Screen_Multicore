@@ -1,3 +1,6 @@
+//SSID & PW
+#include "arduino_secrets.h"
+
 #include <Adafruit_BMP280.h>
 #include <NTPClient.h>
 #include <Wire.h>
@@ -10,8 +13,8 @@ rgb_lcd lcd;
 
 IPAddress ip(192, 168, 35, 100);
 
-const char ssid[] = "SBO_GUEST";
-const char pass[] = "MyGuests951!";
+const char ssid[] = SECRET_SSID;
+const char pass[] = SECRET_PASS;
 
 const int clockButton = 6;
 const int tempButton = 7;
