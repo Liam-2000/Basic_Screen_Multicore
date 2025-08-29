@@ -17,7 +17,6 @@ IPAddress ip(192, 168, 35, 100);
 
 const char ssid[] = SECRET_SSID;
 const char pass[] = SECRET_PASS;
-//51.05831906053555, 4.6248937321702694
 const char* weatherURL = "http://api.open-meteo.com/v1/forecast?latitude=51.0534&longitude=4.6326&current=temperature_2m,weathercode&timezone=auto";
 
 float temp;
@@ -60,7 +59,7 @@ void setup() {
 
 void loop() {
   getWeather();
-  delay(60000);
+  delay(10000);
 }
 
 void setup1(){
