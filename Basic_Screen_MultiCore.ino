@@ -25,7 +25,10 @@ int weatherCode;
 const int clockButton = 6;
 const int tempButton = 7;
 const int weatherButton = 8;
+const int spotifyButton = 9;
 int button = 1;
+
+String spotifyLine = "";
 
 WiFiUDP ntpUDP;
 HTTPClient http;
@@ -47,28 +50,28 @@ byte degree[8] = {
 void setup() {
   Serial.begin(115200);
   initPins();
-  pinMode(LED_BUILTIN, OUTPUT);
   lcd.begin(16, 2);
   lcd.clear();
   connectWiFi();
   bmp.begin();
   timeClient.begin();
-  timeClient.update();
   http.begin(weatherURL);
 }
 
 void loop() {
   getWeather();
+  lcd.createChar(0, degree);
   delay(10000);
 }
 
 void setup1(){
+  lcd.createChar(0, degree);
 }
 
 void loop1(){
-  lcd.createChar(0, degree);
   setButtons();
   buttonActions(button);
+  updateSpotifySerial();
 }
 
 void connectWiFi(){
@@ -91,6 +94,7 @@ void initPins(){
   pinMode(clockButton, INPUT_PULLUP);
   pinMode(tempButton, INPUT_PULLUP);
   pinMode(weatherButton, INPUT_PULLUP);
+  pinMode(spotifyButton, INPUT_PULLUP);
 }
 
 void setButtons(){
@@ -109,6 +113,11 @@ void setButtons(){
   if (digitalRead(weatherButton) == LOW){
     button = 3;
   }
+  //Spotify
+  // Debug // Serial.println(digitalRead(spotifyButton));
+  if (digitalRead(spotifyButton) == LOW){
+    button = 4;
+  }
 }
 
 void buttonActions(int button){
@@ -120,19 +129,37 @@ void buttonActions(int button){
     lcd.print(dayIntToString(timeClient.getDay()));
     delay(250);
   } 
-  if (button == 2) {
+  else if (button == 2) {
     lcd.clear();
     lcd.print(bmp.readTemperature());
     lcd.write((unsigned char)0);
     lcd.print("C");
     delay(250);
   }
-  if (button == 3) {
+  else if (button == 3) {
     lcd.clear();
     lcd.print("Temp: ");
     lcd.print(temp, 1);
     lcd.setCursor(0, 1);
     lcd.print(mapWeatherCode(weatherCode));
+    delay(250);
+  }
+  else if (button == 4) {
+    lcd.clear();
+    if (spotifyLine.length() == 0) {
+      lcd.print("Waiting for");
+      lcd.setCursor(0, 1);
+      lcd.print("Spotify...");
+    } else {
+      int sep = spotifyLine.indexOf(" - ");
+      if (sep != -1) {
+        lcd.print(spotifyLine.substring(0, sep));
+        lcd.setCursor(0, 1);
+        lcd.print(spotifyLine.substring(sep + 3));
+      } else {
+        lcd.print(spotifyLine);
+      }
+    }
     delay(250);
   }
 }
@@ -170,6 +197,20 @@ void getWeather(){
   http.end();
 }
 
+void updateSpotifySerial() {
+  static String currentLine = "";
+
+  while (Serial.available() > 0) {
+    char c = Serial.read();
+
+    if (c == '\n') {
+      spotifyLine = currentLine;
+      currentLine = "";
+    } else {
+      currentLine += c;
+    }
+  }
+}
 
 String mapWeatherCode(int weatherCode) {
   switch (weatherCode) {
