@@ -22,11 +22,13 @@ const char* weatherURL = URL;
 float temp;
 int weatherCode;
 
-const int clockButton = 6;
-const int tempButton = 7;
-const int weatherButton = 8;
-const int spotifyButton = 9;
+const int nextButton = 6;
+const int backButton = 7;
+const int maxPageNumber = 4;
+const int minPageNumber = 1;
 int button = 1;
+
+bool hasInternet = false;
 
 String spotifyLine = "";
 
@@ -34,7 +36,7 @@ WiFiUDP ntpUDP;
 HTTPClient http;
 Adafruit_BMP280 bmp;
 
-NTPClient timeClient(ntpUDP, "0.be.pool.ntp.org", 7200);
+NTPClient timeClient(ntpUDP, "0.be.pool.ntp.org", 3600);
 
 byte degree[8] = {
       0b11100,
@@ -77,46 +79,43 @@ void loop1(){
 void connectWiFi(){
   WiFi.config(ip);
   WiFi.begin(ssid, pass);
-  while (WiFi.status() != WL_CONNECTED){
-    lcd.print("Connecting...");
-    Serial.println("Connecting...");
-  }
+
   lcd.setCursor(0, 0);
-  Serial.println("Network Connected");
-  lcd.print("Connected!");
+  lcd.clear();
+  lcd.print("Connecting...");
+
+  while (WiFi.status() != WL_CONNECTED){
+    delay(500);
+  }
+
+  lcd.setCursor(0, 0);
+  lcd.print("Checking");
   lcd.setCursor(0, 1);
-  lcd.print(WiFi.localIP());
+  lcd.print("Connection!");
+  delay(1000);
+
+  hasInternet = checkInternet();
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  if (hasInternet) {
+    lcd.print("Connection OK");
+  } else {
+    lcd.print("No connection");
+  }
   delay(1500);
   lcd.clear();
 }
 
 void initPins(){
-  pinMode(clockButton, INPUT_PULLUP);
-  pinMode(tempButton, INPUT_PULLUP);
-  pinMode(weatherButton, INPUT_PULLUP);
-  pinMode(spotifyButton, INPUT_PULLUP);
+  pinMode(nextButton, INPUT_PULLUP);
+  pinMode(backButton, INPUT_PULLUP);
 }
 
 void setButtons(){
-  //Clock
-  // Debug // Serial.println(digitalRead(clockButton));
-  if (digitalRead(clockButton) == LOW){
-    button = 1;
-  }
-  //temperature
-  // Debug // Serial.println(digitalRead(tempButton));
-  if (digitalRead(tempButton) == LOW){
-    button = 2;
-  }
-  //Weather Forecast
-  // Debug // Serial.println(digitalRead(weatherButton));
-  if (digitalRead(weatherButton) == LOW){
-    button = 3;
-  }
-  //Spotify
-  // Debug // Serial.println(digitalRead(spotifyButton));
-  if (digitalRead(spotifyButton) == LOW){
-    button = 4;
+  if (digitalRead(nextButton) == LOW && digitalRead(backButton) != LOW && button < maxPageNumber) {
+    button++;
+  } else if (digitalRead(backButton) == LOW && digitalRead(nextButton) != LOW && button > minPageNumber) {
+    button--;
   }
 }
 
@@ -236,4 +235,12 @@ String mapWeatherCode(int weatherCode) {
     case 99: return "Thunder And Hail";
     default: return "Unknown";
   }
+}
+
+bool checkInternet() {
+  HTTPClient testHttp;
+  testHttp.begin("http://clients3.google.com/generate_204");
+  int code = testHttp.GET();
+  testHttp.end();
+  return (code == 204);
 }
